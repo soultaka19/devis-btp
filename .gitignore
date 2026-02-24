@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+
+# Build output
+frontend/dist/
+frontend/.angular/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Environment
+.env
+.env.prod
+.env.local
+
+# Uploads
+uploads/
+
+# IDE
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# OS
+.DS_Store
+Thumbs.db
+nul
+
+# Docker volumes
+pgdata/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Alembic
+backend/alembic/versions/__pycache__/

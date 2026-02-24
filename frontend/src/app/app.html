@@ -1,0 +1,152 @@
+@if (authStore.isAuthenticated()) {
+
+  <!-- ========== TOOLBAR (mobile + desktop toolbar mode) ========== -->
+  @if (showToolbar()) {
+    <mat-toolbar class="app-toolbar" [class.mobile]="isMobile()">
+      @if (isMobile()) {
+        <button mat-icon-button (click)="toggleMobileMenu()" aria-label="Menu">
+          <mat-icon>menu</mat-icon>
+        </button>
+      } @else {
+        <div class="toolbar-brand">
+          <mat-icon class="toolbar-logo-icon">construction</mat-icon>
+          <span class="toolbar-logo-text">Devis BTP</span>
+        </div>
+
+        <nav class="toolbar-nav">
+          <a mat-button routerLink="/dashboard" routerLinkActive="active-toolbar-link">
+            <mat-icon>dashboard</mat-icon>
+            <span>{{ 'NAV.DASHBOARD' | translate }}</span>
+          </a>
+          <a mat-button routerLink="/quote/new" routerLinkActive="active-toolbar-link">
+            <mat-icon>add_circle</mat-icon>
+            <span>{{ 'NAV.NEW_QUOTE' | translate }}</span>
+          </a>
+          <a mat-button routerLink="/company" routerLinkActive="active-toolbar-link">
+            <mat-icon>business</mat-icon>
+            <span>{{ 'NAV.COMPANY' | translate }}</span>
+          </a>
+        </nav>
+      }
+
+      @if (isMobile()) {
+        <span class="toolbar-logo-text">Devis BTP</span>
+      }
+
+      <span class="spacer"></span>
+
+      <button mat-icon-button class="lang-toggle-btn" (click)="lang.toggleLanguage()"
+              [matTooltip]="lang.isFrench() ? 'English' : 'Français'">
+        <span class="lang-label">{{ lang.isFrench() ? 'EN' : 'FR' }}</span>
+      </button>
+
+      <button mat-icon-button class="settings-btn" (click)="toggleLayout()"
+              [matTooltip]="layoutMode() === 'toolbar' ? ('NAV.SWITCH_TO_SIDEBAR' | translate) : ('NAV.SWITCH_TO_TOOLBAR' | translate)">
+        <mat-icon>settings</mat-icon>
+      </button>
+
+      @if (!isMobile()) {
+        <div class="toolbar-user">
+          <div class="toolbar-user-avatar">{{ getUserInitials() }}</div>
+          <span class="toolbar-user-name">{{ authStore.user()?.full_name || ('NAV.USER' | translate) }}</span>
+        </div>
+        <button mat-icon-button class="toolbar-logout-btn" (click)="authStore.logout()" [matTooltip]="'NAV.LOGOUT' | translate">
+          <mat-icon>logout</mat-icon>
+        </button>
+      } @else {
+        <div class="toolbar-user-avatar small">{{ getUserInitials() }}</div>
+      }
+    </mat-toolbar>
+  }
+
+  <!-- ========== SIDENAV CONTAINER (always in DOM) ========== -->
+  <mat-sidenav-container class="app-container" [class.with-toolbar]="showToolbar()">
+    <mat-sidenav #sidenav
+                 [mode]="sidenavMode()"
+                 [opened]="sidenavOpened()"
+                 class="sidebar"
+                 [class.collapsed]="sidebarCollapsed() && !isMobile()">
+
+      <div class="sidebar-header">
+        <div class="logo-section">
+          <mat-icon class="logo-icon">construction</mat-icon>
+          @if (!sidebarCollapsed() || isMobile()) {
+            <span class="logo-text">Devis BTP</span>
+          }
+        </div>
+        @if (!isMobile()) {
+          <button mat-icon-button class="collapse-btn" (click)="toggleSidebarCollapse()"
+                  [matTooltip]="sidebarCollapsed() ? ('NAV.EXPAND' | translate) : ('NAV.COLLAPSE' | translate)">
+            <mat-icon>{{ sidebarCollapsed() ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+          </button>
+        }
+      </div>
+
+      <mat-nav-list class="sidebar-nav">
+        <a mat-list-item routerLink="/dashboard" routerLinkActive="active-link" (click)="onNavClick()"
+           [matTooltip]="sidebarCollapsed() && !isMobile() ? ('NAV.DASHBOARD' | translate) : ''" matTooltipPosition="right">
+          <mat-icon matListItemIcon>dashboard</mat-icon>
+          @if (!sidebarCollapsed() || isMobile()) {
+            <span matListItemTitle>{{ 'NAV.DASHBOARD' | translate }}</span>
+          }
+        </a>
+        <a mat-list-item routerLink="/quote/new" routerLinkActive="active-link" (click)="onNavClick()"
+           [matTooltip]="sidebarCollapsed() && !isMobile() ? ('NAV.NEW_QUOTE' | translate) : ''" matTooltipPosition="right">
+          <mat-icon matListItemIcon>add_circle</mat-icon>
+          @if (!sidebarCollapsed() || isMobile()) {
+            <span matListItemTitle>{{ 'NAV.NEW_QUOTE' | translate }}</span>
+          }
+        </a>
+        <a mat-list-item routerLink="/company" routerLinkActive="active-link" (click)="onNavClick()"
+           [matTooltip]="sidebarCollapsed() && !isMobile() ? ('NAV.COMPANY' | translate) : ''" matTooltipPosition="right">
+          <mat-icon matListItemIcon>business</mat-icon>
+          @if (!sidebarCollapsed() || isMobile()) {
+            <span matListItemTitle>{{ 'NAV.COMPANY' | translate }}</span>
+          }
+        </a>
+      </mat-nav-list>
+
+      <div class="sidebar-footer">
+        <div class="user-section"
+             [matTooltip]="sidebarCollapsed() && !isMobile() ? (authStore.user()?.full_name || ('NAV.USER' | translate)) : ''"
+             matTooltipPosition="right">
+          <div class="user-avatar">{{ getUserInitials() }}</div>
+          @if (!sidebarCollapsed() || isMobile()) {
+            <div class="user-info">
+              <span class="user-name">{{ authStore.user()?.full_name || ('NAV.USER' | translate) }}</span>
+              <span class="user-email">{{ authStore.user()?.email || '' }}</span>
+            </div>
+          }
+        </div>
+
+        <div class="sidebar-footer-actions">
+          <button mat-icon-button class="lang-toggle-btn"
+                  (click)="lang.toggleLanguage()"
+                  [matTooltip]="lang.isFrench() ? 'English' : 'Français'" matTooltipPosition="right">
+            <span class="lang-label">{{ lang.isFrench() ? 'EN' : 'FR' }}</span>
+          </button>
+          @if (!isMobile()) {
+            <button mat-icon-button class="settings-btn"
+                    (click)="toggleLayout()"
+                    [matTooltip]="'NAV.SWITCH_TO_TOOLBAR' | translate" matTooltipPosition="right">
+              <mat-icon>settings</mat-icon>
+            </button>
+          }
+          <button mat-icon-button class="logout-btn"
+                  (click)="authStore.logout()" [matTooltip]="'NAV.LOGOUT' | translate" matTooltipPosition="right">
+            <mat-icon>logout</mat-icon>
+          </button>
+        </div>
+      </div>
+    </mat-sidenav>
+
+    <mat-sidenav-content class="main-content">
+      <main>
+        <router-outlet />
+      </main>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+
+} @else {
+  <router-outlet />
+}

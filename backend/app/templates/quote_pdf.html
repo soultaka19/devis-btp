@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @page {
+      size: A4;
+      margin: 20mm;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Helvetica', 'Arial', sans-serif;
+      font-size: 10pt;
+      color: #333;
+      line-height: 1.4;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      border-bottom: 3px solid #1565C0;
+      padding-bottom: 15px;
+    }
+    .company-info h1 {
+      font-size: 18pt;
+      color: #1565C0;
+      margin-bottom: 5px;
+    }
+    .company-info p { font-size: 9pt; color: #666; }
+    .logo { max-width: 120px; max-height: 80px; }
+    .quote-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 25px;
+    }
+    .quote-ref {
+      background: #E3F2FD;
+      padding: 10px 15px;
+      border-radius: 4px;
+    }
+    .quote-ref h2 { font-size: 14pt; color: #1565C0; }
+    .client-info {
+      background: #F5F5F5;
+      padding: 12px 15px;
+      border-radius: 4px;
+    }
+    .client-info h3 { font-size: 10pt; color: #999; margin-bottom: 5px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    thead { background: #1565C0; color: white; }
+    th { padding: 8px 10px; text-align: left; font-size: 9pt; }
+    th:nth-child(n+3) { text-align: right; }
+    td { padding: 8px 10px; border-bottom: 1px solid #E0E0E0; font-size: 9pt; }
+    td:nth-child(n+3) { text-align: right; }
+    tr:nth-child(even) { background: #FAFAFA; }
+    .totals {
+      float: right;
+      width: 250px;
+      margin-top: 10px;
+    }
+    .totals table { margin: 0; }
+    .totals td { border: none; padding: 5px 10px; }
+    .totals .total-ttc {
+      background: #1565C0;
+      color: white;
+      font-size: 12pt;
+      font-weight: bold;
+    }
+    .footer {
+      clear: both;
+      margin-top: 40px;
+      padding-top: 15px;
+      border-top: 1px solid #E0E0E0;
+      font-size: 8pt;
+      color: #999;
+    }
+    .footer-section {
+      margin-bottom: 10px;
+    }
+    .footer-section h4 {
+      color: #666;
+      font-size: 8pt;
+      margin-bottom: 3px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="company-info">
+      <h1>{{ company.name }}</h1>
+      <p>{{ company.address }}<br>{{ company.postal_code }} {{ company.city }}</p>
+      <p>Tél: {{ company.phone }} | {{ company.email }}</p>
+      <p>SIRET: {{ company.siret }}</p>
+    </div>
+    {% if company.logo_path %}
+    <img class="logo" src="{{ company.logo_path }}" alt="Logo">
+    {% endif %}
+  </div>
+
+  <div class="quote-meta">
+    <div class="quote-ref">
+      <h2>DEVIS {{ quote.reference }}</h2>
+      <p>Date: {{ quote.created_at.strftime('%d/%m/%Y') }}</p>
+      {% if terms %}
+      <p>Validité: {{ terms.validity_days }} jours</p>
+      {% endif %}
+    </div>
+    <div class="client-info">
+      <h3>CLIENT</h3>
+      <p><strong>{{ quote.client_name }}</strong></p>
+      <p>{{ quote.client_address }}</p>
+      {% if quote.client_phone %}<p>Tél: {{ quote.client_phone }}</p>{% endif %}
+      {% if quote.client_email %}<p>{{ quote.client_email }}</p>{% endif %}
+    </div>
+  </div>
+
+  {% if quote.title %}
+  <h3 style="margin-bottom: 10px;">{{ quote.title }}</h3>
+  {% endif %}
+  {% if quote.description %}
+  <p style="margin-bottom: 15px; color: #666;">{{ quote.description }}</p>
+  {% endif %}
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 5%;">#</th>
+        <th style="width: 40%;">Désignation</th>
+        <th style="width: 10%;">Unité</th>
+        <th style="width: 10%;">Qté</th>
+        <th style="width: 12%;">P.U. HT</th>
+        <th style="width: 8%;">TVA</th>
+        <th style="width: 15%;">Total HT</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in quote.line_items %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ item.description }}</td>
+        <td style="text-align: center;">{{ item.unit }}</td>
+        <td>{{ "%.2f"|format(item.quantity) }}</td>
+        <td>{{ "%.2f"|format(item.unit_price) }} €</td>
+        <td>{{ "%.1f"|format(item.vat_rate) }}%</td>
+        <td>{{ "%.2f"|format(item.total_ht) }} €</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="totals">
+    <table>
+      <tr>
+        <td><strong>Total HT</strong></td>
+        <td>{{ "%.2f"|format(totals.subtotal_ht) }} €</td>
+      </tr>
+      {% for rate, amount in totals.vat_breakdown.items() %}
+      <tr>
+        <td>TVA {{ "%.1f"|format(rate) }}%</td>
+        <td>{{ "%.2f"|format(amount) }} €</td>
+      </tr>
+      {% endfor %}
+      <tr class="total-ttc">
+        <td>Total TTC</td>
+        <td>{{ "%.2f"|format(totals.total_ttc) }} €</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="footer">
+    {% if banking %}
+    <div class="footer-section">
+      <h4>Coordonnées bancaires</h4>
+      <p>{{ banking.bank_name }} | IBAN: {{ banking.iban }} | BIC: {{ banking.bic }}</p>
+    </div>
+    {% endif %}
+
+    {% if insurance %}
+    <div class="footer-section">
+      <h4>Assurance décennale</h4>
+      <p>{{ insurance.provider }} - Police n° {{ insurance.policy_number }} - Zone: {{ insurance.coverage_zone }}</p>
+    </div>
+    {% endif %}
+
+    {% if terms %}
+    <div class="footer-section">
+      <h4>Conditions</h4>
+      <p>{{ terms.payment_terms }} | Pénalité de retard: {{ "%.1f"|format(terms.late_penalty_rate) }}%</p>
+      {% if terms.general_conditions %}
+      <p>{{ terms.general_conditions }}</p>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</body>
+</html>

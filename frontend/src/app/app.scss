@@ -1,0 +1,414 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+// ============================================
+// App Toolbar (shared mobile + desktop toolbar)
+// ============================================
+.app-toolbar {
+  background: var(--primary) !important;
+  color: white !important;
+  height: var(--toolbar-height, 56px);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+
+  &.mobile {
+    padding: 0 12px;
+  }
+
+  button {
+    color: rgba(255, 255, 255, 0.7) !important;
+
+    &:hover {
+      color: white !important;
+    }
+  }
+}
+
+.toolbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 24px;
+}
+
+.toolbar-logo-icon {
+  color: var(--accent) !important;
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+}
+
+.toolbar-logo-text {
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.5px;
+  color: white;
+}
+
+.toolbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  a {
+    color: rgba(255, 255, 255, 0.7) !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+
+    .mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+      color: rgba(255, 255, 255, 0.5) !important;
+    }
+
+    span {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.08) !important;
+      color: white !important;
+
+      .mat-icon {
+        color: rgba(255, 255, 255, 0.8) !important;
+      }
+    }
+
+    &.active-toolbar-link {
+      background: rgba(255, 255, 255, 0.12) !important;
+      color: white !important;
+
+      .mat-icon {
+        color: var(--accent) !important;
+      }
+    }
+  }
+}
+
+.toolbar-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 8px;
+}
+
+.toolbar-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-light));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 12px;
+  flex-shrink: 0;
+
+  &.small {
+    width: 30px;
+    height: 30px;
+    font-size: 11px;
+  }
+}
+
+.toolbar-user-name {
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.9);
+
+  @media (max-width: 900px) {
+    display: none;
+  }
+}
+
+.toolbar-logout-btn {
+  color: rgba(255, 255, 255, 0.5) !important;
+
+  &:hover {
+    color: var(--danger) !important;
+  }
+}
+
+// ============================================
+// Language Toggle
+// ============================================
+.lang-toggle-btn {
+  flex-shrink: 0;
+}
+
+.lang-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+// ============================================
+// Settings Button (always visible)
+// ============================================
+.settings-btn {
+  color: rgba(255, 255, 255, 0.6) !important;
+  transition: all 0.2s ease !important;
+  flex-shrink: 0;
+
+  &:hover {
+    color: var(--accent) !important;
+  }
+}
+
+// ============================================
+// Sidenav Container
+// ============================================
+.app-container {
+  height: 100%;
+
+  &.with-toolbar {
+    height: calc(100% - var(--toolbar-height, 56px));
+  }
+
+  // Smooth content shift when sidebar collapses/expands
+  ::ng-deep .mat-drawer-content {
+    transition: margin-left 0.2s ease !important;
+  }
+}
+
+// ============================================
+// Sidebar
+// ============================================
+.sidebar {
+  width: 260px;
+  background: var(--primary) !important;
+  border-right: none !important;
+  transition: width 0.2s ease;
+
+  // Fix: mat-sidenav wraps content inside .mat-drawer-inner-container
+  // We need flex column on that container for the footer to stick to bottom
+  ::ng-deep .mat-drawer-inner-container {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  // Collapsed state (desktop only)
+  &.collapsed {
+    width: 68px;
+
+    .sidebar-header {
+      padding: 16px 8px;
+    }
+
+    .sidebar-nav {
+      padding: 12px 4px !important;
+
+      a.mat-mdc-list-item {
+        justify-content: center;
+        padding: 0 !important;
+
+        .mdc-list-item__content {
+          display: flex;
+          justify-content: center;
+        }
+      }
+    }
+
+    .sidebar-footer {
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 8px;
+
+      .user-section {
+        flex: unset;
+      }
+
+      .sidebar-footer-actions {
+        flex-direction: column;
+      }
+    }
+  }
+}
+
+.sidebar-header {
+  padding: 24px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-icon {
+  color: var(--accent) !important;
+  font-size: 32px;
+  width: 32px;
+  height: 32px;
+}
+
+.logo-text {
+  color: white;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.collapse-btn {
+  color: rgba(255, 255, 255, 0.5) !important;
+  transition: color 0.2s ease !important;
+
+  &:hover {
+    color: white !important;
+  }
+}
+
+// ============================================
+// Sidebar Navigation
+// ============================================
+.sidebar-nav {
+  flex: 1;
+  padding: 12px 8px !important;
+
+  a.mat-mdc-list-item {
+    border-radius: 8px !important;
+    margin-bottom: 4px;
+    color: rgba(255, 255, 255, 0.7) !important;
+    transition: all 0.2s ease !important;
+
+    .mat-icon {
+      color: rgba(255, 255, 255, 0.5) !important;
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.08) !important;
+      color: white !important;
+
+      .mat-icon {
+        color: rgba(255, 255, 255, 0.8) !important;
+      }
+    }
+
+    &.active-link {
+      background: rgba(255, 255, 255, 0.12) !important;
+      color: white !important;
+
+      .mat-icon {
+        color: var(--accent) !important;
+      }
+    }
+  }
+}
+
+// ============================================
+// Sidebar Footer (user info at bottom)
+// ============================================
+.sidebar-footer {
+  margin-top: auto;
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sidebar-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-light));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.user-name {
+  color: white;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-email {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.logout-btn {
+  color: rgba(255, 255, 255, 0.5) !important;
+  transition: color 0.2s ease !important;
+  flex-shrink: 0;
+
+  &:hover {
+    color: var(--danger) !important;
+  }
+}
+
+// ============================================
+// Main Content
+// ============================================
+.main-content {
+  background: var(--surface);
+  // Smooth transition when sidebar collapses/expands
+  transition: margin-left 0.2s ease !important;
+}
+
+main {
+  padding: 16px 12px;
+  width: 100%;
+  box-sizing: border-box;
+  transition: padding 0.2s ease;
+
+  @media (min-width: 768px) {
+    padding: 24px;
+  }
+
+  @media (min-width: 1024px) {
+    padding: 28px 32px;
+  }
+}
