@@ -12,7 +12,7 @@ services:
     depends_on:
       - frontend
     environment:
-      DOMAIN: ${DOMAIN:-localhost}
+      DOMAIN: ${DOMAIN:-:80}
 
   db:
     image: postgres:16-alpine
@@ -40,7 +40,7 @@ services:
       RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-devis@example.com}
       STORAGE_BACKEND: local
       STORAGE_LOCAL_PATH: /app/uploads
-      CORS_ORIGINS: '["https://${DOMAIN:-localhost}","http://${DOMAIN:-localhost}"]'
+      CORS_ORIGINS: ${CORS_ORIGINS:-["http://localhost"]}
     depends_on:
       db:
         condition: service_healthy
