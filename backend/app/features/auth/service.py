@@ -17,7 +17,9 @@ from app.features.auth.schemas import LoginRequest, RegisterRequest, TokenRespon
 async def register_user(db: AsyncSession, data: RegisterRequest, lang: str = "fr") -> User:
     existing = await db.execute(select(User).where(User.email == data.email))
     if existing.scalar_one_or_none():
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=t("auth.email_taken", lang))
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=t("auth.email_taken", lang)
+        )
 
     user = User(
         email=data.email,
@@ -30,12 +32,16 @@ async def register_user(db: AsyncSession, data: RegisterRequest, lang: str = "fr
     return user
 
 
-async def authenticate_user(db: AsyncSession, data: LoginRequest, lang: str = "fr") -> TokenResponse:
+async def authenticate_user(
+    db: AsyncSession, data: LoginRequest, lang: str = "fr"
+) -> TokenResponse:
     result = await db.execute(select(User).where(User.email == data.email))
     user = result.scalar_one_or_none()
 
     if not user or not verify_password(data.password, user.hashed_password):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=t("auth.invalid_credentials", lang))
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=t("auth.invalid_credentials", lang)
+        )
 
     return TokenResponse(
         access_token=create_access_token(str(user.id)),
@@ -46,14 +52,18 @@ async def authenticate_user(db: AsyncSession, data: LoginRequest, lang: str = "f
 async def refresh_tokens(db: AsyncSession, refresh_token: str, lang: str = "fr") -> TokenResponse:
     payload = decode_token(refresh_token)
     if not payload or payload.get("type") != "refresh":
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=t("auth.invalid_refresh_token", lang))
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=t("auth.invalid_refresh_token", lang)
+        )
 
     user_id = payload.get("sub")
     result = await db.execute(select(User).where(User.id == int(user_id)))
     user = result.scalar_one_or_none()
 
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=t("auth.user_not_found", lang))
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=t("auth.user_not_found", lang)
+        )
 
     return TokenResponse(
         access_token=create_access_token(str(user.id)),

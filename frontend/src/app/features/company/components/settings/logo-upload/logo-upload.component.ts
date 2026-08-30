@@ -1,7 +1,8 @@
-import { Component, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
+import { environment } from '../../../../../../environments/environment';
 
 @Component({
   selector: 'app-logo-upload',
@@ -10,8 +11,8 @@ import { TranslateModule } from '@ngx-translate/core';
   template: `
     <div class="logo-section">
       <h4>{{ 'COMPANY.LOGO' | translate }}</h4>
-      @if (logoPath()) {
-        <img [src]="logoPath()" alt="Logo" class="logo-preview">
+      @if (logoUrl()) {
+        <img [src]="logoUrl()" alt="Logo" class="logo-preview">
       }
       <div class="upload-area" (dragover)="$event.preventDefault()" (drop)="onDrop($event)">
         <mat-icon>cloud_upload</mat-icon>
@@ -40,6 +41,12 @@ import { TranslateModule } from '@ngx-translate/core';
 export class LogoUploadComponent {
   logoPath = input<string | undefined>();
   upload = output<File>();
+
+  // logo_path is relative to the API storage folder; the API serves it under /uploads
+  logoUrl = computed(() => {
+    const path = this.logoPath();
+    return path ? `${environment.apiUrl}/uploads/${path}` : undefined;
+  });
 
   onFileSelected(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0];

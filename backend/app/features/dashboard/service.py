@@ -8,9 +8,7 @@ from app.features.quote.models import Quote, QuoteStatus
 
 async def get_dashboard_stats(db: AsyncSession, user_id: int) -> dict:
     # Total quotes
-    total_result = await db.execute(
-        select(func.count(Quote.id)).where(Quote.user_id == user_id)
-    )
+    total_result = await db.execute(select(func.count(Quote.id)).where(Quote.user_id == user_id))
     total_quotes = total_result.scalar() or 0
 
     # This month
@@ -25,9 +23,7 @@ async def get_dashboard_stats(db: AsyncSession, user_id: int) -> dict:
     quotes_this_month = month_result.scalar() or 0
 
     # Average value
-    avg_result = await db.execute(
-        select(func.avg(Quote.total_ttc)).where(Quote.user_id == user_id)
-    )
+    avg_result = await db.execute(select(func.avg(Quote.total_ttc)).where(Quote.user_id == user_id))
     avg_quote_value = round(avg_result.scalar() or 0.0, 2)
 
     # Status breakdown
@@ -53,9 +49,6 @@ async def get_dashboard_stats(db: AsyncSession, user_id: int) -> dict:
 
 async def get_recent_quotes(db: AsyncSession, user_id: int, limit: int = 10) -> list[Quote]:
     result = await db.execute(
-        select(Quote)
-        .where(Quote.user_id == user_id)
-        .order_by(Quote.created_at.desc())
-        .limit(limit)
+        select(Quote).where(Quote.user_id == user_id).order_by(Quote.created_at.desc()).limit(limit)
     )
     return list(result.scalars().all())

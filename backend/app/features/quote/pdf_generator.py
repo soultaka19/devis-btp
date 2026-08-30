@@ -1,9 +1,11 @@
+import base64
+import mimetypes
 from io import BytesIO
 from pathlib import Path
 
 from fastapi import HTTPException, status
 from fastapi.responses import StreamingResponse
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 from sqlalchemy.ext.asyncio import AsyncSession
 
 try:
@@ -13,12 +15,28 @@ try:
 except ImportError:
     WEASYPRINT_AVAILABLE = False
 
+from app.core.storage import storage
 from app.features.company.service import get_banking, get_company, get_insurance, get_terms
 from app.features.quote.calculator import calc_quote_totals
 from app.features.quote.service import get_quote
 
 TEMPLATE_DIR = Path(__file__).parent.parent.parent / "templates"
-jinja_env = Environment(loader=FileSystemLoader(str(TEMPLATE_DIR)))
+# autoescape: user-provided values (client name, descriptions...) are rendered as text, not HTML
+jinja_env = Environment(
+    loader=FileSystemLoader(str(TEMPLATE_DIR)),
+    autoescape=select_autoescape(["html", "xml"]),
+)
+
+
+async def logo_data_uri(logo_path: str | None) -> str | None:
+    """Embed the stored logo as a data: URI so WeasyPrint renders it without any base URL."""
+    if not logo_path:
+        return None
+    data = await storage.get(logo_path)
+    if not data:
+        return None
+    mime_type = mimetypes.guess_type(logo_path)[0] or "image/png"
+    return f"data:{mime_type};base64,{base64.b64encode(data).decode('ascii')}"
 
 
 async def generate_pdf_bytes(db: AsyncSession, user_id: int, quote_id: int) -> bytes:
@@ -48,6 +66,7 @@ async def generate_pdf_bytes(db: AsyncSession, user_id: int, quote_id: int) -> b
         insurance=insurance,
         terms=terms,
         totals=totals,
+        logo_src=await logo_data_uri(company.logo_path),
     )
 
     if not WEASYPRINT_AVAILABLE:

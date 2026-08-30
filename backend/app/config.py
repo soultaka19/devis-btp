@@ -1,7 +1,23 @@
+import logging
+
+from pydantic import ValidationInfo, field_validator
 from pydantic_settings import BaseSettings
+
+logger = logging.getLogger(__name__)
+
+# Example values shipped in .env.example / docker-compose files: never valid in production
+PLACEHOLDER_SECRET_KEYS = {
+    "change-me-in-production",
+    "change-me-in-production-use-openssl-rand-hex-32",
+    "dev-secret-key-change-in-production",
+}
+MIN_SECRET_KEY_LENGTH = 32
 
 
 class Settings(BaseSettings):
+    # "development" (default) or "production"
+    APP_ENV: str = "development"
+
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/devis_btp"
 
@@ -11,15 +27,21 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    # OpenAI
+    # LLM provider — any endpoint exposing the OpenAI API works.
+    # Default: Google Gemini through its OpenAI-compatible layer.
+    LLM_API_KEY: str = ""
+    LLM_API_URL: str = "https://generativelanguage.googleapis.com/v1beta/openai/"
+    # Text parsing (function calling) and audio transcription both run on this
+    # model: Gemini has no /audio/transcriptions endpoint, so transcription goes
+    # through chat/completions with an `input_audio` part (see voice_service).
+    LLM_MODEL: str = "gemini-3.6-flash"
+
+    # Deprecated: kept so an existing .env carrying only OPENAI_API_KEY keeps
+    # working. `llm_api_key` below prefers LLM_API_KEY when both are present.
     OPENAI_API_KEY: str = ""
 
-    # Storage
-    STORAGE_BACKEND: str = "local"
+    # Storage (local filesystem, served under /uploads)
     STORAGE_LOCAL_PATH: str = "./uploads"
-    AWS_ACCESS_KEY_ID: str = ""
-    AWS_SECRET_ACCESS_KEY: str = ""
-    AWS_S3_BUCKET: str = ""
 
     # Email
     RESEND_API_KEY: str = ""
@@ -29,6 +51,34 @@ class Settings(BaseSettings):
     CORS_ORIGINS: list[str] = ["http://localhost:4200"]
 
     model_config = {"env_file": ".env", "extra": "ignore"}
+
+    @property
+    def llm_api_key(self) -> str:
+        """Provider key, falling back to the legacy OpenAI variable."""
+        return self.LLM_API_KEY or self.OPENAI_API_KEY
+
+    @field_validator("SECRET_KEY")
+    @classmethod
+    def check_secret_key(cls, key: str, info: ValidationInfo) -> str:
+        """Refuse a weak/placeholder SECRET_KEY in production (JWT would be forgeable).
+
+        APP_ENV is declared before SECRET_KEY, so it is already available in info.data.
+        """
+        if not key:
+            problem = "SECRET_KEY est vide"
+        elif key in PLACEHOLDER_SECRET_KEYS:
+            problem = "SECRET_KEY est une valeur d'exemple"
+        elif len(key) < MIN_SECRET_KEY_LENGTH:
+            problem = f"SECRET_KEY fait moins de {MIN_SECRET_KEY_LENGTH} caractères"
+        else:
+            return key
+
+        app_env = info.data.get("APP_ENV", "development")
+        message = f"{problem} : générez une clé avec `openssl rand -hex 32`"
+        if app_env == "production":
+            raise ValueError(message)
+        logger.warning("%s (toléré car APP_ENV=%s)", message, app_env)
+        return key
 
 
 settings = Settings()

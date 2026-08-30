@@ -48,7 +48,9 @@ async def get_banking(db: AsyncSession, user_id: int) -> Banking | None:
     return result.scalar_one_or_none()
 
 
-async def get_or_create_insurance(db: AsyncSession, user_id: int, data: InsuranceCreate) -> Insurance:
+async def get_or_create_insurance(
+    db: AsyncSession, user_id: int, data: InsuranceCreate
+) -> Insurance:
     result = await db.execute(select(Insurance).where(Insurance.user_id == user_id))
     insurance = result.scalar_one_or_none()
     if insurance:

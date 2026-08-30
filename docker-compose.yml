@@ -6,7 +6,10 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: devis_btp
     ports:
-      - "5432:5432"
+      # Port hôte configurable : un PostgreSQL local sur 5432 suffit sinon à
+      # faire échouer `docker compose up`. À l'intérieur du réseau compose,
+      # l'API joint toujours db:5432.
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -18,11 +21,16 @@ services:
   api:
     build: ./backend
     ports:
-      - "8000:8000"
+      - "${API_HOST_PORT:-8000}:8000"
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/devis_btp
       SECRET_KEY: dev-secret-key-change-in-production
       CORS_ORIGINS: '["http://localhost:4200"]'
+      # Fournisseur LLM : sans clé, l'analyse de texte et la transcription
+      # vocale répondent 502. Le reste de l'application fonctionne.
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_API_URL: ${LLM_API_URL:-https://generativelanguage.googleapis.com/v1beta/openai/}
+      LLM_MODEL: ${LLM_MODEL:-gemini-3.6-flash}
     depends_on:
       db:
         condition: service_healthy
