@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/:chemin*",
-      "destination": "https://devis-api.soultaka.com/:chemin*"
+      "destination": "https://devis-btp-api.soultaka.com/:chemin*"
     },
     {
       "source": "/(.*)",

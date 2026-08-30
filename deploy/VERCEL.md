@@ -39,7 +39,7 @@ Angular 17+ écrit dans `dist/<projet>/browser`, pas `dist/<projet>` — d'où l
 ## Pourquoi une réécriture `/api` plutôt que du CORS
 
 `environment.prod.ts` appelle `/api`, un chemin relatif. La réécriture Vercel
-envoie ces requêtes vers `https://devis-api.soultaka.com` **sans que le
+envoie ces requêtes vers `https://devis-btp-api.soultaka.com` **sans que le
 navigateur voie un changement d'origine**.
 
 Conséquence : pas de configuration CORS à maintenir, et surtout pas de requête
@@ -50,7 +50,7 @@ transatlantique complet avant même l'envoi de la donnée.
 ## Pourquoi le WebSocket ne passe pas par là
 
 Vercel ne proxifie pas les upgrades WebSocket. `environment.prod.ts` vise donc
-`wss://devis-api.soultaka.com/ws` en direct.
+`wss://devis-btp-api.soultaka.com/ws` en direct.
 
 Cette URL est **absolue à dessein** : `new WebSocket()` refuse un chemin relatif.
 La configuration de production portait `/ws`, ce qui ne pouvait pas fonctionner —

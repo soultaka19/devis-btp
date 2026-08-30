@@ -10,5 +10,5 @@ export const environment = {
   // Two reasons: `new WebSocket()` rejects a relative URL outright, and Vercel
   // rewrites do not proxy WebSocket upgrades. Auth travels as a `token` query
   // parameter, so the cross-origin handshake needs nothing from CORS.
-  wsUrl: 'wss://devis-api.soultaka.com/ws',
+  wsUrl: 'wss://devis-btp-api.soultaka.com/ws',
 };
