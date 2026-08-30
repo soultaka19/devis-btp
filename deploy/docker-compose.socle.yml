@@ -1,0 +1,40 @@
+# Devis BTP sur le socle partage.
+#
+# Ne contient QUE l'API : le front Angular est servi par Vercel depuis l'edge de
+# Montreal. Pas de PostgreSQL ni de Caddy ici non plus, ils sont mutualises.
+#
+# Le service s'appelle `devis-api` et non `api` : le reseau `socle` est partage
+# entre les sept projets, et Docker y publie un alias par nom de service. Deux
+# projets nommant leur service `api` se marcheraient dessus.
+
+name: devis
+
+services:
+  devis-api:
+    build:
+      context: ../backend
+    image: devis-api:socle
+    restart: unless-stopped
+    env_file:
+      - ./devis.env
+    environment:
+      APP_ENV: production
+      STORAGE_LOCAL_PATH: /app/uploads
+    volumes:
+      - uploads:/app/uploads
+    networks: [socle]
+    # Aucun port publie : Caddy joint le conteneur par le reseau interne.
+    healthcheck:
+      # L'image python:3.12-slim n'a pas curl : on passe par la bibliotheque standard.
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  uploads:
+
+networks:
+  socle:
+    external: true

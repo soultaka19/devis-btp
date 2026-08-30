@@ -46,3 +46,7 @@ htmlcov/
 
 # Alembic
 backend/alembic/versions/__pycache__/
+
+# Secrets du deploiement : le depot est clone sur le VPS, ou devis.env vit a
+# cote du compose. Sans cette ligne, un `git add -A` la-bas les committerait.
+deploy/*.env
