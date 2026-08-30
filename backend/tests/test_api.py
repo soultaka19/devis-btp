@@ -4,8 +4,8 @@ Run with (the database must exist and be empty or disposable):
 
     TEST_DATABASE_URL=postgresql+asyncpg://postgres@127.0.0.1:5432/devis_btp_test pytest -q
 
-The whole module is skipped when TEST_DATABASE_URL is not set. OpenAI is never called:
-the parse-text tests monkeypatch the client.
+The whole module is skipped when TEST_DATABASE_URL is not set. The LLM provider is
+never called: the parse-text tests monkeypatch the client.
 """
 
 import io
@@ -34,8 +34,9 @@ if "app.config" in sys.modules:  # pragma: no cover - defensive
 os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 UPLOAD_DIR = tempfile.mkdtemp(prefix="devis-test-uploads-")
 os.environ["STORAGE_LOCAL_PATH"] = UPLOAD_DIR
-os.environ.setdefault("OPENAI_API_KEY", "sk-test-not-used")
+os.environ.setdefault("LLM_API_KEY", "test-key-not-used")
 
+from app.config import settings  # noqa: E402
 from app.database import Base, engine  # noqa: E402
 from app.features.quote import ai_parser  # noqa: E402
 from app.main import app  # noqa: E402
@@ -422,10 +423,13 @@ async def test_parse_text_sanitizes_model_output(client, user_a, monkeypatch):
     ]
     assert body["client"] == {"name": "M. Martin", "address": None, "email": None, "phone": None}
 
-    # Cost controls on the completion call
+    # Cost controls on the completion call. Both values come from configuration
+    # rather than being repeated here: the model is provider-dependent, and the
+    # token ceiling has to grow when the provider is a reasoning model, which
+    # charges its hidden reasoning to the same budget.
     call = completions.calls[0]
-    assert call["max_tokens"] == 2000
-    assert call["model"] == "gpt-4o-mini"
+    assert call["max_tokens"] == ai_parser.MAX_COMPLETION_TOKENS
+    assert call["model"] == settings.LLM_MODEL
 
 
 async def test_parse_text_openai_connection_error_is_503(client, user_a, monkeypatch):

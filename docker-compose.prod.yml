@@ -36,7 +36,9 @@ services:
       APP_ENV: production
       DATABASE_URL: postgresql+asyncpg://postgres:${DB_PASSWORD:?DB_PASSWORD manquant dans .env.prod}@db:5432/devis_btp
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY manquant dans .env.prod}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      LLM_API_KEY: ${LLM_API_KEY:?LLM_API_KEY manquant dans .env.prod}
+      LLM_API_URL: ${LLM_API_URL:-https://generativelanguage.googleapis.com/v1beta/openai/}
+      LLM_MODEL: ${LLM_MODEL:-gemini-3.6-flash}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-devis@example.com}
       STORAGE_LOCAL_PATH: /app/uploads

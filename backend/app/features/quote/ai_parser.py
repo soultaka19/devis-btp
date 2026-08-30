@@ -14,9 +14,18 @@ from app.features.quote.calculator import VALID_VAT_RATES
 logger = logging.getLogger(__name__)
 
 # Bounded wait: the default client waits up to 600 s with 2 retries
-client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY, timeout=30, max_retries=1)
+client = AsyncOpenAI(
+    api_key=settings.llm_api_key,
+    base_url=settings.LLM_API_URL,
+    timeout=30,
+    max_retries=1,
+)
 
-MAX_COMPLETION_TOKENS = 2000
+# Generation cap. On a reasoning model this budget covers the model's internal
+# reasoning as well as the emitted tool call — measured on Gemini: ~640 hidden
+# tokens for 160 emitted. 2000 was sized for gpt-4o-mini, which emitted only
+# output; keeping that value here truncates the tool arguments into invalid JSON.
+MAX_COMPLETION_TOKENS = 4000
 
 # Units accepted by the tool schema, plus the "m2" spelling used by the frontend selector
 ALLOWED_UNITS = ("u", "m²", "m2", "m", "h", "kg", "forfait")
@@ -214,7 +223,7 @@ async def parse_text_to_line_items(text: str, lang: str = "fr") -> dict:
     """Parse French BTP text into line items and client info (OpenAI function calling)."""
     try:
         response = await client.chat.completions.create(
-            model="gpt-4o-mini",
+            model=settings.LLM_MODEL,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": text},

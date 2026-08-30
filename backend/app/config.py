@@ -27,7 +27,17 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    # OpenAI
+    # LLM provider — any endpoint exposing the OpenAI API works.
+    # Default: Google Gemini through its OpenAI-compatible layer.
+    LLM_API_KEY: str = ""
+    LLM_API_URL: str = "https://generativelanguage.googleapis.com/v1beta/openai/"
+    # Text parsing (function calling) and audio transcription both run on this
+    # model: Gemini has no /audio/transcriptions endpoint, so transcription goes
+    # through chat/completions with an `input_audio` part (see voice_service).
+    LLM_MODEL: str = "gemini-3.6-flash"
+
+    # Deprecated: kept so an existing .env carrying only OPENAI_API_KEY keeps
+    # working. `llm_api_key` below prefers LLM_API_KEY when both are present.
     OPENAI_API_KEY: str = ""
 
     # Storage (local filesystem, served under /uploads)
@@ -41,6 +51,11 @@ class Settings(BaseSettings):
     CORS_ORIGINS: list[str] = ["http://localhost:4200"]
 
     model_config = {"env_file": ".env", "extra": "ignore"}
+
+    @property
+    def llm_api_key(self) -> str:
+        """Provider key, falling back to the legacy OpenAI variable."""
+        return self.LLM_API_KEY or self.OPENAI_API_KEY
 
     @field_validator("SECRET_KEY")
     @classmethod

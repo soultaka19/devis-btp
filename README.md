@@ -22,7 +22,7 @@ costs deals.
 ## Solution
 
 A single screen where the contractor describes the job ("pose de carrelage 20 m² à 45 euros,
-client M. Martin, 12 rue des Lilas...") by voice or text. The API sends the text to GPT-4o-mini
+client M. Martin, 12 rue des Lilas...") by voice or text. The API sends the text to the LLM
 with a function-calling schema tuned for French construction vocabulary and returns clean line
 items (description, unit, quantity, unit price, VAT rate) plus the client details it found. The
 contractor adjusts the lines in a table, sees the live preview, and downloads or emails the PDF,
@@ -32,8 +32,8 @@ which carries the company's logo, SIRET, bank details, decennial insurance and p
 
 - Email/password accounts with JWT access and refresh tokens.
 - Chat-like quote composer: text input, or voice dictation through the browser's Web Speech API
-  with a server-side Whisper transcription endpoint as fallback.
-- AI extraction of line items and client information (OpenAI GPT-4o-mini, function calling), with
+  with a server-side transcription endpoint as fallback.
+- AI extraction of line items and client information (function calling), with
   server-side sanitisation of the model output (quantities, prices, VAT rates, units).
 - Editable line items (units, quantities, unit prices, 5.5 / 10 / 20 % VAT) with totals computed
   per line and per VAT rate.
@@ -49,7 +49,7 @@ which carries the company's logo, SIRET, bank details, decennial insurance and p
 ## My Role
 
 Full-stack developer of the project: product definition (PRD), data model, FastAPI backend,
-Angular frontend, PDF template, OpenAI integration and the Docker/VPS deployment.
+Angular frontend, PDF template, LLM integration and the Docker/VPS deployment.
 
 ## Architecture
 
@@ -61,7 +61,7 @@ Caddy (:80/:443, Let's Encrypt)
    ▼
 nginx (frontend container): static SPA, /api/* → API (prefix stripped), /ws/* → API (WebSocket)
    ▼
-FastAPI (uvicorn) ── OpenAI (chat completions + Whisper)
+FastAPI (uvicorn) ── LLM provider (chat completions: text + audio)
    │                ── Resend (email)
    │                ── WeasyPrint (PDF)
    ▼
@@ -85,7 +85,7 @@ migration has been generated yet.
 | Frontend | Angular 21, Angular Material 21, Angular Signals, ngx-translate, SCSS, Vitest |
 | Backend | Python 3.12, FastAPI, Pydantic v2, SQLAlchemy 2 (async), asyncpg, Alembic |
 | Auth | JWT HS256 (python-jose), bcrypt |
-| AI | OpenAI `gpt-4o-mini` (function calling), `whisper-1` |
+| AI | Google Gemini `gemini-3.6-flash` via its OpenAI-compatible layer — function calling for parsing, inline audio for transcription |
 | PDF / email | WeasyPrint + Jinja2, Resend |
 | Database | PostgreSQL 16 |
 | Ops | Docker, Docker Compose, nginx, Caddy, ruff, pytest, httpx |
@@ -99,7 +99,7 @@ migration has been generated yet.
 - **Money arithmetic**: line totals and VAT are rounded per line, then aggregated per VAT rate
   (`calculator.py`), which is what the PDF prints.
 - **Error envelope and i18n**: business errors are raised as `AppException` and serialised as
-  `{detail, code}`; OpenAI failures map to `503 AI_UNAVAILABLE` / `502 AI_ERROR` instead of a
+  `{detail, code}`; provider failures map to `503 AI_UNAVAILABLE` / `502 AI_ERROR` instead of a
   generic 500, in the language requested by the client.
 - **Production hardening**: `APP_ENV=production` refuses an empty, short or placeholder
   `SECRET_KEY` at startup; Compose requires `DB_PASSWORD` and `SECRET_KEY`; the API has a Docker
@@ -116,7 +116,7 @@ migration has been generated yet.
 - **LLM hallucinated values** (negative quantities, 33 % VAT, unknown units): a sanitisation step
   coerces values to the domain (quantity defaults to 1, price to 0, nearest legal VAT rate,
   fallback unit) and drops malformed client emails.
-- **Upstream outages turned into 500s**: OpenAI calls now have a 30 s timeout and a single retry,
+- **Upstream outages turned into 500s**: provider calls now have a 30 s timeout and a single retry,
   and every client exception is mapped to a clear, translated 502/503 response.
 - **Logo never rendered**: the stored path was relative to the storage folder, so neither the
   SPA nor WeasyPrint could load it. The API now serves `/uploads`, the SPA builds the URL from
@@ -137,7 +137,7 @@ libgdk-pixbuf-2.0-0 libffi-dev shared-mime-info fonts-dejavu`).
 cd backend
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
-cp .env.example .env            # edit DATABASE_URL, SECRET_KEY, OPENAI_API_KEY
+cp .env.example .env            # edit DATABASE_URL, SECRET_KEY, LLM_API_KEY
 createdb devis_btp              # or any database matching DATABASE_URL
 
 # Frontend
@@ -158,13 +158,15 @@ Backend (`backend/.env`, see `backend/.env.example`):
 | `DATABASE_URL` | `postgresql+asyncpg://user:password@host:5432/devis_btp` |
 | `SECRET_KEY` | JWT signing key, at least 32 characters (`openssl rand -hex 32`) |
 | `ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES`, `REFRESH_TOKEN_EXPIRE_DAYS` | JWT settings (HS256, 30 min, 7 days) |
-| `OPENAI_API_KEY` | OpenAI key used for text parsing and Whisper transcription |
+| `LLM_API_KEY` | Provider key, used for both text parsing and voice transcription (Gemini: https://aistudio.google.com/apikey) |
+| `LLM_API_URL` | Provider base URL. Default: Google's OpenAI-compatible layer |
+| `LLM_MODEL` | Model id. Default `gemini-3.6-flash` — `gemini-2.5-flash` answers 404 for new accounts |
 | `STORAGE_LOCAL_PATH` | Folder for uploaded logos, served under `/uploads` (default `./uploads`) |
 | `RESEND_API_KEY`, `RESEND_FROM_EMAIL` | Email sending (optional; sending fails cleanly without a key) |
 | `CORS_ORIGINS` | JSON array of allowed origins, e.g. `["http://localhost:4200"]` |
 
 Production (`.env.prod`, see `.env.prod.example`): `DB_PASSWORD`, `SECRET_KEY` (both required by
-Compose), `OPENAI_API_KEY`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `DOMAIN`, `CORS_ORIGINS`.
+Compose), `LLM_API_KEY`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `DOMAIN`, `CORS_ORIGINS`.
 
 Frontend: `src/environments/environment.ts` targets `http://localhost:8000` in development;
 the production build uses relative `/api` and `/ws` URLs proxied by nginx.
@@ -190,7 +192,7 @@ ruff check . && ruff format --check .   # lint + formatting
 pytest -q                               # calculator unit tests; API tests are skipped without a test database
 
 # End-to-end API tests (auth, company, quotes, PDF, logo upload, AI parsing with a mocked
-# OpenAI client) against a dedicated, disposable PostgreSQL database:
+# LLM client) against a dedicated, disposable PostgreSQL database:
 createdb devis_btp_test
 TEST_DATABASE_URL=postgresql+asyncpg://postgres@127.0.0.1:5432/devis_btp_test pytest -q
 ```
@@ -210,7 +212,7 @@ npx tsc -p tsconfig.app.json --noEmit
 cd frontend && npx ng build --configuration production
 
 # Full stack with Docker Compose (see DEPLOY.md for the VPS procedure)
-cp .env.prod.example .env.prod   # fill DB_PASSWORD, SECRET_KEY, OPENAI_API_KEY, DOMAIN, CORS_ORIGINS
+cp .env.prod.example .env.prod   # fill DB_PASSWORD, SECRET_KEY, LLM_API_KEY, DOMAIN, CORS_ORIGINS
 docker compose -f docker-compose.prod.yml --env-file .env.prod up --build -d
 curl http://localhost/api/health
 ```

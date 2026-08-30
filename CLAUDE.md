@@ -12,7 +12,7 @@ Monorepo with two independent stacks:
 
 - **Frontend** (`frontend/`): Angular 21 + Angular Material 21 + SCSS
 - **Backend** (`backend/`): FastAPI + SQLAlchemy 2 (async) + PostgreSQL 16
-- **AI**: OpenAI GPT-4o-mini for parsing French BTP text into line items
+- **AI**: Google Gemini (`gemini-3.6-flash`) through its OpenAI-compatible layer — function calling for text parsing, inline audio for voice transcription
 - **PDF**: WeasyPrint + Jinja2 templates
 - **Auth**: JWT (HS256) with access/refresh tokens
 
@@ -29,7 +29,7 @@ npm test           # Unit tests (Vitest)
 ```bash
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"                      # Install (system deps for WeasyPrint: see README.md)
-cp .env.example .env                         # Then edit DATABASE_URL, SECRET_KEY, OPENAI_API_KEY
+cp .env.example .env                         # Then edit DATABASE_URL, SECRET_KEY, LLM_API_KEY
 uvicorn app.main:app --reload --port 8000   # Dev server (creates the tables on startup)
 pytest                                       # Unit tests (calculator); API tests are skipped without TEST_DATABASE_URL
 TEST_DATABASE_URL=postgresql+asyncpg://postgres@127.0.0.1:5432/devis_btp_test pytest   # Unit + API tests
@@ -45,7 +45,8 @@ not applied to an existing database. Generate the initial migration with
 
 ### Docker (from root)
 ```bash
-docker compose up      # PostgreSQL + Backend (ports 5432, 8000)
+docker compose up      # PostgreSQL + Backend. Host ports are configurable:
+                       # POSTGRES_HOST_PORT (5432) and API_HOST_PORT (8000)
 ```
 
 ## Frontend Architecture
@@ -89,11 +90,15 @@ app/features/{name}/
 
 **API routes**: `/auth`, `/quotes`, `/company`, `/dashboard`, `/ws`, `/health`, `/uploads` (static: company logos)
 
-**AI parsing** (`features/quote/ai_parser.py`): Uses GPT-4o-mini function calling to extract line items from French BTP text. Auto-assigns units (m², u, h, forfait) and VAT rates (10% renovation, 20% new).
+**AI parsing** (`features/quote/ai_parser.py`): Function calling to extract line items from French BTP text. Auto-assigns units (m², u, h, forfait) and VAT rates (10% renovation, 20% new).
 
-**Config** (`app/config.py`): All settings via environment variables. Key: `DATABASE_URL`, `SECRET_KEY`, `OPENAI_API_KEY`, `APP_ENV` (`production` refuses an empty/short/placeholder `SECRET_KEY`).
+**Voice transcription** (`features/quote/voice_service.py`): Audio is sent inline to `chat/completions` as an `input_audio` part, *not* to `/audio/transcriptions` — Google's OpenAI-compatible layer does not expose that endpoint (verified: 404). A transcription cut short by `max_tokens` is refused rather than returned, since a truncated dictation would be parsed into quote lines as if complete.
 
-**Errors**: `core/exceptions.py` returns `{detail, code}`; raise `AppException(detail, code, status_code)` for business errors (e.g. `AI_UNAVAILABLE` → 503 when OpenAI is unreachable). Messages go through `core/i18n.py` (fr/en, `Accept-Language`).
+**Config** (`app/config.py`): All settings via environment variables. Key: `DATABASE_URL`, `SECRET_KEY`, `LLM_API_KEY`, `LLM_API_URL`, `LLM_MODEL`, `APP_ENV` (`production` refuses an empty/short/placeholder `SECRET_KEY`). `OPENAI_API_KEY` is still read as a fallback when `LLM_API_KEY` is empty.
+
+⚠️ On a reasoning model, `max_tokens` caps the hidden reasoning *plus* the output — measured on Gemini: ~640 hidden tokens for 160 emitted. `MAX_COMPLETION_TOKENS` was raised from 2000 to 4000 accordingly; the value sized for gpt-4o-mini truncated tool arguments into invalid JSON. Note also that `gemini-2.5-flash` answers 404 « no longer available to new users ».
+
+**Errors**: `core/exceptions.py` returns `{detail, code}`; raise `AppException(detail, code, status_code)` for business errors (e.g. `AI_UNAVAILABLE` → 503 when the provider is unreachable). Messages go through `core/i18n.py` (fr/en, `Accept-Language`).
 
 ## Database
 
