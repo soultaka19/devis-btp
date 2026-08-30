@@ -12,14 +12,26 @@ n'admet pas de commentaires.
 | Production Branch | `main` |
 | **Root Directory** | **`frontend`** |
 | Framework Preset | Angular (détection automatique) |
-| Build Command | *laisser vide* — la détection Angular suffit |
+| Build Command | forcé par `vercel.json` (`npm run build`) — voir ci-dessous |
 | Install Command | *laisser vide* |
 | Output Directory | fourni par `vercel.json` (`dist/frontend/browser`) |
 | Domaine | `devis.soultaka.com` |
 
-**Ne pas saisir de Build Command dans le tableau de bord.** Un `cd frontend` y a
-déjà fait échouer un déploiement : le Root Directory étant `frontend`, la
-commande s'exécutait déjà depuis ce répertoire.
+## Pourquoi `buildCommand` est écrit noir sur blanc
+
+Le tableau de bord du projet portait `cd frontend && npm ci && npm run build`.
+Le Root Directory valant déjà `frontend`, ce `cd` échouait :
+`sh: line 1: cd: frontend: No such file or directory`.
+
+Ce réglage vit **dans le projet Vercel**, pas dans le dépôt : déplacer ou vider
+le `vercel.json` ne l'atteint pas. Deux déploiements ont échoué sur cette même
+ligne pour cette raison.
+
+`vercel.json` a la priorité sur les réglages du projet. Déclarer
+`"buildCommand": "npm run build"` écrase donc la valeur du tableau de bord
+depuis le dépôt, sans dépendre d'un accès à l'interface. **Ne pas retirer ce
+champ** tant que le tableau de bord n'a pas été vidé à la main : l'omission
+laisse simplement le réglage cassé reprendre la main.
 
 Angular 17+ écrit dans `dist/<projet>/browser`, pas `dist/<projet>` — d'où le
 `outputDirectory` explicite, que la détection automatique ne devine pas toujours.
