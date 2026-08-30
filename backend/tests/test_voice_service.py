@@ -43,6 +43,9 @@ def fake_client(completions: FakeCompletions):
         ("prise.wav", "wav"),
         ("bande.ogg", "ogg"),
         ("piste.flac", "flac"),
+        # Casse indifferente, et le resultat ne doit PAS dependre du registre
+        # MIME du systeme : sur Ubuntu, mimetypes rendait "mp4" pour un .m4a.
+        ("MEMO.M4A", "m4a"),
         # Inconnu ou sans extension : on retombe sur le format du navigateur,
         # seul chemin qui atteint réellement cette fonction depuis l'interface.
         ("enregistrement", "webm"),

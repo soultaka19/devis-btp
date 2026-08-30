@@ -1,6 +1,5 @@
 import base64
 import logging
-import mimetypes
 import time
 
 import openai
@@ -25,21 +24,29 @@ client = AsyncOpenAI(
 # 20 MB of source audio stays under the provider's 25 MB request ceiling once encoded.
 MAX_AUDIO_SIZE = 20 * 1024 * 1024
 
-# Audio containers the provider accepts, mapped to the `format` value the
-# OpenAI-compatible `input_audio` part expects.
+# File extension -> `format` tag expected by the OpenAI-compatible
+# `input_audio` part.
+#
+# Deliberately NOT derived from `mimetypes.guess_type`: that module reads the
+# system MIME registry, so the same file name resolves differently per platform.
+# It cost a CI failure — `memo.m4a` mapped to `m4a` on Windows but to `mp4` on
+# Ubuntu, where /etc/mime.types declares `audio/mp4` for that extension. An
+# explicit table is deterministic everywhere.
 AUDIO_FORMATS = {
-    "audio/webm": "webm",
-    "audio/ogg": "ogg",
-    "audio/mpeg": "mp3",
-    "audio/mp3": "mp3",
-    "audio/mp4": "mp4",
-    "audio/m4a": "m4a",
-    "audio/x-m4a": "m4a",
-    "audio/wav": "wav",
-    "audio/x-wav": "wav",
-    "audio/flac": "flac",
-    "audio/aac": "aac",
+    "webm": "webm",
+    "ogg": "ogg",
+    "oga": "ogg",
+    "opus": "ogg",
+    "mp3": "mp3",
+    "mpga": "mp3",
+    "mp4": "mp4",
+    "m4a": "m4a",
+    "wav": "wav",
+    "flac": "flac",
+    "aac": "aac",
 }
+# What the browser's MediaRecorder produces in Chrome and Firefox, and the only
+# path that reaches this function from the UI.
 DEFAULT_AUDIO_FORMAT = "webm"
 
 TRANSCRIPTION_PROMPT = (
@@ -57,16 +64,10 @@ MAX_TRANSCRIPTION_TOKENS = 2000
 def _audio_format(filename: str) -> str:
     """Derive the `input_audio` format tag from the uploaded file name.
 
-    Falls back to webm, which is what the browser's MediaRecorder produces in
-    Chrome and Firefox — the only path that reaches this function from the UI.
+    Extension-driven and case-insensitive; anything unknown falls back to webm.
     """
-    mime, _ = mimetypes.guess_type(filename)
-    if mime in AUDIO_FORMATS:
-        return AUDIO_FORMATS[mime]
     suffix = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
-    if suffix in set(AUDIO_FORMATS.values()):
-        return suffix
-    return DEFAULT_AUDIO_FORMAT
+    return AUDIO_FORMATS.get(suffix, DEFAULT_AUDIO_FORMAT)
 
 
 async def transcribe_audio(
