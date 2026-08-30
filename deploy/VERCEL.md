@@ -15,7 +15,7 @@ n'admet pas de commentaires.
 | Build Command | forcé par `vercel.json` (`npm run build`) — voir ci-dessous |
 | Install Command | *laisser vide* |
 | Output Directory | fourni par `vercel.json` (`dist/frontend/browser`) |
-| Domaine | `devis.soultaka.com` |
+| Domaine | `devis-btp.soultaka.com` |
 
 ## Pourquoi `buildCommand` est écrit noir sur blanc
 
