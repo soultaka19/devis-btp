@@ -95,8 +95,8 @@
       <p>Tél: {{ company.phone }} | {{ company.email }}</p>
       <p>SIRET: {{ company.siret }}</p>
     </div>
-    {% if company.logo_path %}
-    <img class="logo" src="{{ company.logo_path }}" alt="Logo">
+    {% if logo_src %}
+    <img class="logo" src="{{ logo_src }}" alt="Logo">
     {% endif %}
   </div>
 

@@ -78,7 +78,15 @@ async def list_quotes(
 async def update_quote(db: AsyncSession, user_id: int, quote_id: int, data: QuoteUpdate) -> Quote:
     quote = await get_quote(db, user_id, quote_id)
 
-    for field in ["client_name", "client_address", "client_email", "client_phone", "title", "description", "status"]:
+    for field in [
+        "client_name",
+        "client_address",
+        "client_email",
+        "client_phone",
+        "title",
+        "description",
+        "status",
+    ]:
         value = getattr(data, field, None)
         if value is not None:
             setattr(quote, field, value)
@@ -152,7 +160,10 @@ async def duplicate_quote(db: AsyncSession, user_id: int, quote_id: int) -> Quot
 
 
 def _recalc_totals(quote: Quote, line_items) -> None:
-    lines = [{"quantity": li.quantity, "unit_price": li.unit_price, "vat_rate": li.vat_rate} for li in line_items]
+    lines = [
+        {"quantity": li.quantity, "unit_price": li.unit_price, "vat_rate": li.vat_rate}
+        for li in line_items
+    ]
     totals = calc_quote_totals(lines)
     quote.subtotal_ht = totals.subtotal_ht
     quote.total_vat = totals.total_vat

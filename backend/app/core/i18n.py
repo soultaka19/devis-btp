@@ -59,6 +59,31 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "fr": "Votre artisan",
         "en": "Your contractor",
     },
+    # AI (OpenAI parsing / Whisper)
+    "ai.unavailable": {
+        "fr": "Service d'analyse IA temporairement indisponible, réessayez dans quelques instants.",
+        "en": "AI parsing service temporarily unavailable, please try again in a moment.",
+    },
+    "ai.error": {
+        "fr": "Erreur du service d'analyse IA.",
+        "en": "AI parsing service error.",
+    },
+    "ai.invalid_response": {
+        "fr": "Réponse invalide du service d'analyse IA.",
+        "en": "Invalid response from the AI parsing service.",
+    },
+    "voice.empty_file": {
+        "fr": "Le fichier audio est vide.",
+        "en": "The audio file is empty.",
+    },
+    "voice.file_too_large": {
+        "fr": "Fichier audio trop volumineux (max 25 Mo).",
+        "en": "Audio file too large (max 25 MB).",
+    },
+    "voice.unsupported_type": {
+        "fr": "Le fichier doit être un fichier audio.",
+        "en": "The file must be an audio file.",
+    },
     # General
     "error.internal": {
         "fr": "Erreur interne du serveur",

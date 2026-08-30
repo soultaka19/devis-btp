@@ -3,8 +3,8 @@
 ## 1. Compte utilisateur
 
 - **Nom** : Souleymane Diallo
-- **Email** : diallosouleymanetaka@gmail.com
-- **Telephone** : 514 431 1634
+- **Email** : test@example.com
+- **Telephone** : +1 555 000 0000
 - **Mot de passe** : (a choisir lors de l'inscription)
 
 ---
@@ -19,7 +19,7 @@
 | Code postal | J8Y 3X7 |
 | Ville | Gatineau |
 | Province | Quebec |
-| Telephone | 514 431 1634 |
+| Telephone | +1 555 000 0000 |
 | Email | contact@dialloconstruction.ca |
 
 ### Assurance

@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, Request, UploadFile
+from fastapi import APIRouter, Depends, Query, Request, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_current_user
-from app.core.i18n import get_lang
+from app.core.exceptions import AppException
+from app.core.i18n import get_lang, t
 from app.database import get_db
 from app.features.auth.models import User
 from app.features.quote.ai_parser import parse_text_to_line_items
@@ -27,7 +28,7 @@ from app.features.quote.service import (
     list_quotes,
     update_quote,
 )
-from app.features.quote.voice_service import transcribe_audio
+from app.features.quote.voice_service import MAX_AUDIO_SIZE, transcribe_audio
 
 router = APIRouter()
 
@@ -43,8 +44,8 @@ async def create(
 
 @router.get("", response_model=list[QuoteListResponse])
 async def list_all(
-    skip: int = 0,
-    limit: int = 20,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -90,19 +91,36 @@ async def duplicate(
 
 @router.post("/parse-text", response_model=ParseTextResponse)
 async def parse_text(
+    request: Request,
     data: ParseTextRequest,
     _user: User = Depends(get_current_user),
 ):
-    return await parse_text_to_line_items(data.text)
+    return await parse_text_to_line_items(data.text, lang=get_lang(request))
 
 
 @router.post("/voice-to-text", response_model=VoiceToTextResponse)
 async def voice_to_text(
+    request: Request,
     file: UploadFile,
     _user: User = Depends(get_current_user),
 ):
-    audio_data = await file.read()
-    result = await transcribe_audio(audio_data, file.filename or "audio.webm")
+    lang = get_lang(request)
+    if not file.content_type or not file.content_type.startswith("audio/"):
+        raise AppException(
+            t("voice.unsupported_type", lang), code="UNSUPPORTED_MEDIA_TYPE", status_code=415
+        )
+
+    # Reject oversized uploads before reading them into memory (Whisper limit: 25 MB)
+    content_length = request.headers.get("content-length", "")
+    if content_length.isdigit() and int(content_length) > MAX_AUDIO_SIZE + 64 * 1024:
+        raise AppException(t("voice.file_too_large", lang), code="FILE_TOO_LARGE", status_code=413)
+    audio_data = await file.read(MAX_AUDIO_SIZE + 1)
+    if len(audio_data) > MAX_AUDIO_SIZE:
+        raise AppException(t("voice.file_too_large", lang), code="FILE_TOO_LARGE", status_code=413)
+    if not audio_data:
+        raise AppException(t("voice.empty_file", lang), code="VALIDATION_ERROR", status_code=422)
+
+    result = await transcribe_audio(audio_data, file.filename or "audio.webm", lang=lang)
     return VoiceToTextResponse(**result)
 
 

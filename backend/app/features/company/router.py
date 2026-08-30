@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from io import BytesIO
+
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, status
+from PIL import Image, UnidentifiedImageError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_current_user
@@ -28,6 +31,10 @@ from app.features.company.service import (
 )
 
 router = APIRouter()
+
+MAX_LOGO_SIZE = 2 * 1024 * 1024
+# Pillow format name -> stored extension (only raster formats WeasyPrint/browsers render safely)
+ALLOWED_LOGO_FORMATS = {"PNG": "png", "JPEG": "jpg", "WEBP": "webp"}
 
 
 # --- Company Info ---
@@ -103,21 +110,59 @@ async def upsert_terms(
 
 
 # --- Logo ---
+def _detect_image_format(content: bytes) -> str | None:
+    """Return the Pillow format name of a valid image, or None if the bytes are not an image."""
+    try:
+        with Image.open(BytesIO(content)) as image:
+            image.verify()
+        # verify() invalidates the image object: reopen to read the format
+        with Image.open(BytesIO(content)) as image:
+            return image.format
+    except (UnidentifiedImageError, Image.DecompressionBombError, OSError, ValueError):
+        return None
+
+
 @router.post("/logo", response_model=CompanyResponse)
 async def upload_logo(
+    request: Request,
     file: UploadFile,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     if not file.content_type or not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Le fichier doit être une image")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Le fichier doit être une image"
+        )
 
-    content = await file.read()
-    if len(content) > 2 * 1024 * 1024:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Image trop volumineuse (max 2 Mo)")
+    # Reject oversized uploads before reading them fully into memory
+    content_length = request.headers.get("content-length", "")
+    if content_length.isdigit() and int(content_length) > MAX_LOGO_SIZE + 64 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            detail="Image trop volumineuse (max 2 Mo)",
+        )
+    content = await file.read(MAX_LOGO_SIZE + 1)
+    if len(content) > MAX_LOGO_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            detail="Image trop volumineuse (max 2 Mo)",
+        )
 
-    path = await storage.save(content, file.filename or "logo.png", folder="logos")
+    # The declared content type can be spoofed: validate the actual bytes with Pillow
+    image_format = _detect_image_format(content)
+    extension = ALLOWED_LOGO_FORMATS.get(image_format or "")
+    if not extension:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Le fichier doit être une image PNG, JPEG ou WEBP valide",
+        )
+
+    # Store with the extension derived from the detected format, never from the client filename
+    path = await storage.save(content, f"logo.{extension}", folder="logos")
     company = await update_logo_path(db, user.id, path)
     if not company:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Créez d'abord les informations entreprise")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Créez d'abord les informations entreprise",
+        )
     return company

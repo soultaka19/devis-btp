@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.dependencies import get_current_user
@@ -20,7 +20,7 @@ async def stats(
 
 @router.get("/recent", response_model=list[RecentQuote])
 async def recent(
-    limit: int = 10,
+    limit: int = Query(10, ge=1, le=100),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):

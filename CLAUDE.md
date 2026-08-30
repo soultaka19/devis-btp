@@ -27,16 +27,25 @@ npm test           # Unit tests (Vitest)
 
 ### Backend (from `backend/`)
 ```bash
-uvicorn app.main:app --reload --port 8000   # Dev server
-pytest                                       # Tests
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"                      # Install (system deps for WeasyPrint: see README.md)
+cp .env.example .env                         # Then edit DATABASE_URL, SECRET_KEY, OPENAI_API_KEY
+uvicorn app.main:app --reload --port 8000   # Dev server (creates the tables on startup)
+pytest                                       # Unit tests (calculator); API tests are skipped without TEST_DATABASE_URL
+TEST_DATABASE_URL=postgresql+asyncpg://postgres@127.0.0.1:5432/devis_btp_test pytest   # Unit + API tests
 pytest -k "test_name"                        # Single test
-ruff check .                                 # Lint
-alembic upgrade head                         # Run migrations
+ruff check . && ruff format --check .        # Lint + formatting (both must pass)
 ```
+
+**Migrations**: Alembic is wired (`alembic/env.py` uses `Base.metadata` and `DATABASE_URL`) but
+`alembic/versions/` contains no migration yet. The schema is created by `Base.metadata.create_all`
+at startup (`app/main.py`), so `alembic upgrade head` is currently a no-op and model changes are
+not applied to an existing database. Generate the initial migration with
+`alembic revision --autogenerate -m "initial"` before relying on Alembic.
 
 ### Docker (from root)
 ```bash
-docker-compose up      # PostgreSQL + Backend (ports 5432, 8000)
+docker compose up      # PostgreSQL + Backend (ports 5432, 8000)
 ```
 
 ## Frontend Architecture
@@ -78,15 +87,17 @@ app/features/{name}/
   router.py      # FastAPI endpoints
 ```
 
-**API routes**: `/auth`, `/quotes`, `/company`, `/dashboard`, `/ws`, `/health`
+**API routes**: `/auth`, `/quotes`, `/company`, `/dashboard`, `/ws`, `/health`, `/uploads` (static: company logos)
 
 **AI parsing** (`features/quote/ai_parser.py`): Uses GPT-4o-mini function calling to extract line items from French BTP text. Auto-assigns units (m², u, h, forfait) and VAT rates (10% renovation, 20% new).
 
-**Config** (`app/config.py`): All settings via environment variables. Key: `DATABASE_URL`, `SECRET_KEY`, `OPENAI_API_KEY`.
+**Config** (`app/config.py`): All settings via environment variables. Key: `DATABASE_URL`, `SECRET_KEY`, `OPENAI_API_KEY`, `APP_ENV` (`production` refuses an empty/short/placeholder `SECRET_KEY`).
+
+**Errors**: `core/exceptions.py` returns `{detail, code}`; raise `AppException(detail, code, status_code)` for business errors (e.g. `AI_UNAVAILABLE` → 503 when OpenAI is unreachable). Messages go through `core/i18n.py` (fr/en, `Accept-Language`).
 
 ## Database
 
-PostgreSQL 16. Models: `users`, `quotes`, `line_items`, `company_info`, `banking`, `insurance`, `terms`. Migrations via Alembic.
+PostgreSQL 16. Tables: `users`, `quotes`, `line_items`, `companies`, `banking`, `insurances`, `terms` (created by `create_all` at startup; see Migrations above).
 
 Default dev credentials: `postgres/postgres` on `localhost:5432/devis_btp`.
 

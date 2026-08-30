@@ -1,14 +1,17 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
+
+# Length limits mirror the String(n) columns in models.py
+# (a longer value made PostgreSQL fail with a 500)
 
 
 class CompanyCreate(BaseModel):
-    name: str
+    name: str = Field(max_length=255)
     siret: str
     address: str
-    city: str
-    postal_code: str
-    phone: str
-    email: str
+    city: str = Field(max_length=255)
+    postal_code: str = Field(max_length=10)
+    phone: str = Field(max_length=20)
+    email: str = Field(max_length=255)
 
     @field_validator("siret")
     @classmethod
@@ -26,9 +29,9 @@ class CompanyResponse(CompanyCreate):
 
 
 class BankingCreate(BaseModel):
-    bank_name: str
+    bank_name: str = Field(max_length=255)
     iban: str
-    bic: str
+    bic: str = Field(max_length=11)
 
     @field_validator("iban")
     @classmethod
@@ -45,9 +48,9 @@ class BankingResponse(BankingCreate):
 
 
 class InsuranceCreate(BaseModel):
-    provider: str
-    policy_number: str
-    coverage_zone: str
+    provider: str = Field(max_length=255)
+    policy_number: str = Field(max_length=100)
+    coverage_zone: str = Field(max_length=255)
 
 
 class InsuranceResponse(InsuranceCreate):
@@ -57,8 +60,8 @@ class InsuranceResponse(InsuranceCreate):
 
 class TermsCreate(BaseModel):
     payment_terms: str = "Paiement à 30 jours"
-    validity_days: int = 30
-    late_penalty_rate: float = 3.0
+    validity_days: int = Field(default=30, ge=0, le=3650)
+    late_penalty_rate: float = Field(default=3.0, ge=0, le=100)
     general_conditions: str = ""
 
 
