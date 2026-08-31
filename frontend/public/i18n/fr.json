@@ -33,7 +33,8 @@
     "FEATURE_CUSTOM": "Personnalisation complète",
     "FEATURE_CLOUD": "Sauvegarde cloud sécurisée",
     "ERROR_LOGIN": "Erreur de connexion",
-    "ERROR_REGISTER": "Erreur lors de l'inscription"
+    "ERROR_REGISTER": "Erreur lors de l'inscription",
+    "TRY_DEMO": "Essayer sans compte"
   },
   "DASHBOARD": {
     "GREETING": "Bonjour, {{name}}",
@@ -127,5 +128,26 @@
     "ERROR_LOAD": "Erreur chargement",
     "ERROR_SAVE": "Erreur sauvegarde",
     "ERROR_UPLOAD": "Erreur upload"
+  },
+  "DEMO": {
+    "TITLE": "Démonstration",
+    "SUBTITLE": "Essayez Devis BTP tout de suite, sans créer de compte.",
+    "POINT_NO_ACCOUNT": "Aucune inscription : ni courriel, ni mot de passe, ni carte.",
+    "POINT_SEEDED": "Une entreprise fictive et trois devis d'exemple vous attendent déjà.",
+    "POINT_AI": "{{total}} essais de l'assistant IA — une dictée déjà analysée n'en consomme aucun.",
+    "POINT_ERASED": "L'espace et tout ce que vous y faites sont effacés au bout d'une heure.",
+    "START": "Entrer dans la démonstration",
+    "RETRY": "Réessayer",
+    "PREPARING": "Préparation de votre espace…",
+    "LOGIN_LINK": "J'ai déjà un compte",
+    "ERROR_GENERIC": "L'espace de démonstration n'a pas pu être créé. Réessayez dans un instant.",
+    "BANNER_LABEL": "Démonstration",
+    "BANNER_TIME": "effacée dans {{time}}",
+    "BANNER_AI": "{{remaining}}/{{total}} essais IA",
+    "BANNER_EXPIRED": "espace expiré",
+    "BANNER_HINT": "Données fictives, supprimées automatiquement.",
+    "LEAVE": "Quitter",
+    "LEAVE_HINT": "Ferme la session de démonstration.",
+    "RESTART": "Nouvel espace"
   }
 }

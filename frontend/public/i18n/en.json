@@ -33,7 +33,8 @@
     "FEATURE_CUSTOM": "Full customisation",
     "FEATURE_CLOUD": "Secure cloud backup",
     "ERROR_LOGIN": "Login error",
-    "ERROR_REGISTER": "Registration error"
+    "ERROR_REGISTER": "Registration error",
+    "TRY_DEMO": "Try it without an account"
   },
   "DASHBOARD": {
     "GREETING": "Hello, {{name}}",
@@ -127,5 +128,26 @@
     "ERROR_LOAD": "Loading error",
     "ERROR_SAVE": "Save error",
     "ERROR_UPLOAD": "Upload error"
+  },
+  "DEMO": {
+    "TITLE": "Demo",
+    "SUBTITLE": "Try Devis BTP right now, with no account.",
+    "POINT_NO_ACCOUNT": "No sign-up: no email, no password, no card.",
+    "POINT_SEEDED": "A fictional company and three sample quotes are already waiting.",
+    "POINT_AI": "{{total}} AI assistant attempts — a dictation already parsed uses none of them.",
+    "POINT_ERASED": "The space and everything you do in it are erased after one hour.",
+    "START": "Enter the demo",
+    "RETRY": "Try again",
+    "PREPARING": "Preparing your space…",
+    "LOGIN_LINK": "I already have an account",
+    "ERROR_GENERIC": "The demo space could not be created. Please try again in a moment.",
+    "BANNER_LABEL": "Demo",
+    "BANNER_TIME": "erased in {{time}}",
+    "BANNER_AI": "{{remaining}}/{{total}} AI attempts",
+    "BANNER_EXPIRED": "space expired",
+    "BANNER_HINT": "Fictional data, deleted automatically.",
+    "LEAVE": "Leave",
+    "LEAVE_HINT": "Closes the demo session.",
+    "RESTART": "New space"
   }
 }

@@ -4,6 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { TranslateModule } from '@ngx-translate/core';
 import { VoiceRecorderService } from '../../services/voice-recorder.service';
 import { QuoteApiService } from '../../services/quote-api.service';
+import { DemoStore } from '../../../../core/demo/demo.store';
 
 @Component({
   selector: 'app-voice-input-button',
@@ -155,6 +156,7 @@ import { QuoteApiService } from '../../services/quote-api.service';
 export class VoiceInputButtonComponent {
   voiceService = inject(VoiceRecorderService);
   private quoteApi = inject(QuoteApiService);
+  private demo = inject(DemoStore);
 
   inline = input(false);
   transcriptReady = output<string>();
@@ -171,7 +173,17 @@ export class VoiceInputButtonComponent {
 
       if (blob) {
         this.quoteApi.voiceToText(blob).subscribe({
-          next: (res) => this.transcriptReady.emit(res.text),
+          next: (res) => {
+            this.demo.noteRemaining(res.ai_calls_remaining);
+            this.transcriptReady.emit(res.text);
+          },
+          error: (err) => {
+            if (err.error?.code === 'AI_QUOTA_EXHAUSTED') {
+              this.demo.noteRemaining(0);
+            }
+            // Silence here would look like a broken microphone.
+            this.voiceService.error.set(err.error?.detail ?? null);
+          },
         });
       }
     } else {

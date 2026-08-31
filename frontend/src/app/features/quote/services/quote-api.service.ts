@@ -1,6 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../../../core/api/api.service';
-import { ParseTextResponse, Quote, QuoteListItem } from '../models/quote.model';
+import {
+  ParseTextResponse,
+  Quote,
+  QuoteListItem,
+  VoiceToTextResponse,
+} from '../models/quote.model';
 
 @Injectable({ providedIn: 'root' })
 export class QuoteApiService {
@@ -37,7 +42,7 @@ export class QuoteApiService {
   voiceToText(audioBlob: Blob) {
     const formData = new FormData();
     formData.append('file', audioBlob, 'audio.webm');
-    return this.api.upload<{ text: string; duration_ms: number }>('/quotes/voice-to-text', formData);
+    return this.api.upload<VoiceToTextResponse>('/quotes/voice-to-text', formData);
   }
 
   generatePdf(id: number) {

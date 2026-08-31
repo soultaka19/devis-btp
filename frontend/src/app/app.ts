@@ -8,6 +8,8 @@ import { MatListModule } from '@angular/material/list';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslateModule } from '@ngx-translate/core';
 import { AuthStore } from './features/auth/state/auth.store';
+import { DemoStore } from './core/demo/demo.store';
+import { DemoBannerComponent } from './core/demo/demo-banner.component';
 import { LanguageService } from './core/i18n/language.service';
 
 @Component({
@@ -23,6 +25,7 @@ import { LanguageService } from './core/i18n/language.service';
     MatListModule,
     MatTooltipModule,
     TranslateModule,
+    DemoBannerComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
@@ -32,6 +35,7 @@ export class App {
 
   authStore = inject(AuthStore);
   lang = inject(LanguageService);
+  demo = inject(DemoStore);
 
   // Persisted preferences
   layoutMode = signal<'sidebar' | 'toolbar'>(this.loadLayoutMode());
@@ -57,6 +61,10 @@ export class App {
 
   constructor() {
     this.checkMobile();
+    // A reload keeps the token but loses the countdown: ask the API again.
+    if (this.authStore.isAuthenticated()) {
+      this.demo.refresh();
+    }
   }
 
   @HostListener('window:resize')

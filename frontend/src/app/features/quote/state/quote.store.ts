@@ -2,11 +2,13 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { ChatMessage, LineItem, ParsedClientInfo, Quote, QuoteListItem } from '../models/quote.model';
 import { QuoteApiService } from '../services/quote-api.service';
 import { LanguageService } from '../../../core/i18n/language.service';
+import { DemoStore } from '../../../core/demo/demo.store';
 
 @Injectable({ providedIn: 'root' })
 export class QuoteStore {
   private api = inject(QuoteApiService);
   private lang = inject(LanguageService);
+  private demo = inject(DemoStore);
 
   readonly draftQuote = signal<Partial<Quote>>({
     client_name: '',
@@ -103,6 +105,9 @@ export class QuoteStore {
     ]);
     this.api.parseText(text).subscribe({
       next: (result) => {
+        // Every answer reports the attempts left, cached or not: the banner
+        // must never claim more than the server will grant.
+        this.demo.noteRemaining(result.ai_calls_remaining);
         const items = result.line_items;
         if (result.title) {
           this.draftQuote.update((d) => d.title ? d : { ...d, title: result.title });
@@ -117,10 +122,19 @@ export class QuoteStore {
         ]);
         this.addItemsProgressively(items);
       },
-      error: () => {
+      error: (err) => {
+        if (err.error?.code === 'AI_QUOTA_EXHAUSTED') {
+          this.demo.noteRemaining(0);
+        }
+        // A quota or budget refusal carries an explanatory message: showing the
+        // generic parsing error instead would leave the visitor guessing.
         this.chatMessages.update((msgs) => [
           ...msgs,
-          { role: 'ai' as const, text: this.lang.instant('QUOTE_STORE.ERROR_PARSING'), timestamp: new Date() },
+          {
+            role: 'ai' as const,
+            text: err.error?.detail || this.lang.instant('QUOTE_STORE.ERROR_PARSING'),
+            timestamp: new Date(),
+          },
         ]);
         this.parsingStatus.set('error');
       },

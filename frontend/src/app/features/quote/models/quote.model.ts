@@ -39,6 +39,18 @@ export interface ParseTextResponse {
   title: string;
   line_items: LineItem[];
   client: ParsedClientInfo | null;
+  // Served from cache: the same model output, without a new call - so without
+  // spending one of the sandbox attempts.
+  from_cache?: boolean;
+  // Attempts left in a demo sandbox; null for a real account, under no quota.
+  ai_calls_remaining?: number | null;
+}
+
+export interface VoiceToTextResponse {
+  text: string;
+  duration_ms: number;
+  from_cache?: boolean;
+  ai_calls_remaining?: number | null;
 }
 
 export interface ChatMessage {

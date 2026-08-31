@@ -64,10 +64,29 @@ export class AuthStore {
     });
   }
 
-  logout() {
+  /**
+   * Adopt a token obtained outside the login form - the demo sandbox hands one
+   * over without ever asking for an email address or a password.
+   *
+   * There is no refresh token in that case: any stale one is dropped so the
+   * next refresh attempt cannot resurrect a previous account.
+   */
+  applySession(accessToken: string) {
+    localStorage.setItem('access_token', accessToken);
+    localStorage.removeItem('refresh_token');
+    this.error.set(null);
+    this.loadUser();
+  }
+
+  /** Drop the session without navigating anywhere. */
+  clearSession() {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     this.user.set(null);
+  }
+
+  logout() {
+    this.clearSession();
     this.router.navigate(['/auth/login']);
   }
 

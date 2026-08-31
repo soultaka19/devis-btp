@@ -88,6 +88,13 @@ import { AuthStore } from '../../state/auth.store';
             <span>{{ 'AUTH.NO_ACCOUNT' | translate }}</span>
             <a routerLink="/auth/register">{{ 'AUTH.REGISTER_LINK' | translate }}</a>
           </div>
+
+          <div class="auth-demo">
+            <a routerLink="/demo">
+              <mat-icon>play_circle</mat-icon>
+              {{ 'AUTH.TRY_DEMO' | translate }}
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -232,6 +239,23 @@ import { AuthStore } from '../../state/auth.store';
       font-size: 15px;
       border-radius: var(--radius-sm) !important;
       margin-top: 8px;
+    }
+
+    .auth-demo {
+      text-align: center;
+      margin-top: 12px;
+
+      a {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: var(--text-secondary);
+
+        mat-icon { font-size: 18px; width: 18px; height: 18px; }
+
+        &:hover { color: var(--accent); }
+      }
     }
 
     .auth-footer {

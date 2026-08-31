@@ -3,6 +3,22 @@
   height: 100%;
 }
 
+// The demo banner takes a row of its own above the toolbar. A flex column
+// keeps the sidenav container filling exactly what is left, whatever the
+// banner wraps to on a narrow screen - a fixed height calc would not.
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  > .app-container,
+  > .app-container.with-toolbar {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
+  }
+}
+
 .spacer {
   flex: 1 1 auto;
 }
