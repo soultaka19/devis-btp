@@ -112,11 +112,17 @@ class ParseTextResponse(BaseModel):
     title: str = ""
     line_items: list[LineItemCreate] = []
     client: ParsedClientInfo | None = None
+    # Served from cache: the same model output, without a new call.
+    from_cache: bool = False
+    # Attempts left for a demo sandbox; None for a real account, under no quota.
+    ai_calls_remaining: int | None = None
 
 
 class VoiceToTextResponse(BaseModel):
     text: str
     duration_ms: int
+    from_cache: bool = False
+    ai_calls_remaining: int | None = None
 
 
 class SendEmailRequest(BaseModel):

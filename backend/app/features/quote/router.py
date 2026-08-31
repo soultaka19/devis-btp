@@ -1,3 +1,5 @@
+import hashlib
+
 from fastapi import APIRouter, Depends, Query, Request, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -6,6 +8,7 @@ from app.core.exceptions import AppException
 from app.core.i18n import get_lang, t
 from app.database import get_db
 from app.features.auth.models import User
+from app.features.demo.gate import guarded_call
 from app.features.quote.ai_parser import parse_text_to_line_items
 from app.features.quote.email_service import send_quote_email
 from app.features.quote.pdf_generator import generate_quote_pdf
@@ -93,16 +96,26 @@ async def duplicate(
 async def parse_text(
     request: Request,
     data: ParseTextRequest,
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
-    return await parse_text_to_line_items(data.text, lang=get_lang(request))
+    lang = get_lang(request)
+    return await guarded_call(
+        db,
+        user,
+        "parse_text",
+        data.text,
+        lambda: parse_text_to_line_items(data.text, lang=lang),
+        lang=lang,
+    )
 
 
 @router.post("/voice-to-text", response_model=VoiceToTextResponse)
 async def voice_to_text(
     request: Request,
     file: UploadFile,
-    _user: User = Depends(get_current_user),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     lang = get_lang(request)
     if not file.content_type or not file.content_type.startswith("audio/"):
@@ -120,7 +133,17 @@ async def voice_to_text(
     if not audio_data:
         raise AppException(t("voice.empty_file", lang), code="VALIDATION_ERROR", status_code=422)
 
-    result = await transcribe_audio(audio_data, file.filename or "audio.webm", lang=lang)
+    name = file.filename or "audio.webm"
+    # The cache key is the audio itself: two identical uploads yield the same
+    # transcription without a second call.
+    result = await guarded_call(
+        db,
+        user,
+        "voice_to_text",
+        hashlib.sha256(audio_data).hexdigest(),
+        lambda: transcribe_audio(audio_data, name, lang=lang),
+        lang=lang,
+    )
     return VoiceToTextResponse(**result)
 
 

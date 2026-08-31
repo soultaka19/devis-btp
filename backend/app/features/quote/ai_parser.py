@@ -9,6 +9,7 @@ from openai import AsyncOpenAI
 from app.config import settings
 from app.core.exceptions import AppException
 from app.core.i18n import t
+from app.core.llm_budget import usage_from_response
 from app.features.quote.calculator import VALID_VAT_RATES
 
 logger = logging.getLogger(__name__)
@@ -237,9 +238,14 @@ async def parse_text_to_line_items(text: str, lang: str = "fr") -> dict:
         logger.warning("OpenAI parse-text call failed: %s: %s", type(exc).__name__, exc)
         raise openai_error(exc, lang) from exc
 
+    # Usage travels with the result: the budget is computed from the tokens
+    # actually billed, never from an estimate. Reasoning tokens, invisible in
+    # the response, are most of the cost of a small call.
+    usage = usage_from_response(response)
+
     tool_call = response.choices[0].message.tool_calls
     if not tool_call:
-        return {"title": "", "line_items": [], "client": None}
+        return {"title": "", "line_items": [], "client": None, "usage": usage}
 
     try:
         args = json.loads(tool_call[0].function.arguments)
@@ -251,4 +257,4 @@ async def parse_text_to_line_items(text: str, lang: str = "fr") -> dict:
     if not isinstance(args, dict):
         raise AppException(t("ai.invalid_response", lang), code="AI_ERROR", status_code=502)
 
-    return sanitize_parsed_data(args)
+    return sanitize_parsed_data(args) | {"usage": usage}

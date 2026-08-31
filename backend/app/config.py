@@ -50,6 +50,30 @@ class Settings(BaseSettings):
     # CORS
     CORS_ORIGINS: list[str] = ["http://localhost:4200"]
 
+    # --- Public demonstration ---------------------------------------------
+    # Disposable sandbox: one user per visitor, erased at expiry.
+    DEMO_LIFETIME_MINUTES: int = 60
+    DEMO_MAX_LIVE_SANDBOXES: int = 50
+    # Creations allowed per IP address per window.
+    DEMO_RATE_LIMIT: int = 3
+    DEMO_RATE_WINDOW_MINUTES: int = 10
+    DEMO_CLEANUP_INTERVAL_SECONDS: int = 300
+
+    # --- Model call budget --------------------------------------------------
+    # REAL calls granted to a sandbox. An input already seen is served from the
+    # cache and consumes nothing: the budget is therefore only spent when the
+    # visitor submits something new.
+    DEMO_AI_CALLS: int = 5
+    # Global ceilings, in dollars. They protect the bill even if the per-IP
+    # limit is bypassed, since they depend on no header.
+    LLM_DAILY_BUDGET_USD: float = 0.50
+    LLM_MONTHLY_BUDGET_USD: float = 5.00
+    # gemini-3.6-flash pricing as of 2026-08-31, per million tokens. Reasoning
+    # tokens are billed at the OUTPUT rate: that is why we count what the API
+    # reports in `usage`, never an estimate.
+    LLM_PRICE_INPUT_PER_M: float = 0.75
+    LLM_PRICE_OUTPUT_PER_M: float = 3.75
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
     @property

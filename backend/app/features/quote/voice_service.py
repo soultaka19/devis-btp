@@ -8,6 +8,7 @@ from openai import AsyncOpenAI
 from app.config import settings
 from app.core.exceptions import AppException
 from app.core.i18n import t
+from app.core.llm_budget import usage_from_response
 from app.features.quote.ai_parser import openai_error
 
 logger = logging.getLogger(__name__)
@@ -121,4 +122,4 @@ async def transcribe_audio(
 
     duration_ms = int((time.time() - start) * 1000)
 
-    return {"text": text, "duration_ms": duration_ms}
+    return {"text": text, "duration_ms": duration_ms, "usage": usage_from_response(response)}

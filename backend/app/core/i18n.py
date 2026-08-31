@@ -22,6 +22,57 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "fr": "Token invalide",
         "en": "Invalid token",
     },
+    # Demo sandbox
+    "demo.saturated": {
+        "fr": (
+            "Trop d'espaces de démonstration sont ouverts en ce moment. "
+            "Chacun expire au bout d'une heure ; réessayez dans quelques minutes."
+        ),
+        "en": (
+            "Too many demo spaces are open right now. "
+            "Each one expires after an hour; try again in a few minutes."
+        ),
+    },
+    "demo.rate_limited": {
+        "fr": (
+            "Vous avez ouvert plusieurs espaces de démonstration coup sur coup. "
+            "Patientez quelques minutes avant d'en créer un nouveau."
+        ),
+        "en": (
+            "You opened several demo spaces in a row. "
+            "Please wait a few minutes before creating another one."
+        ),
+    },
+    "demo.quota_exhausted": {
+        "fr": (
+            "Vous avez utilisé vos {n} essais de l'assistant. Les exemples fournis "
+            "restent utilisables, et un nouvel espace de démonstration vous en "
+            "redonnera autant."
+        ),
+        "en": (
+            "You have used your {n} assistant attempts. The provided examples remain "
+            "usable, and a new demo space will grant you as many again."
+        ),
+    },
+    "demo.budget_daily": {
+        "fr": (
+            "Le budget quotidien de la démonstration est atteint. Les exemples déjà "
+            "générés restent consultables ; réessayez demain."
+        ),
+        "en": (
+            "The daily demo budget has been reached. Already generated examples remain "
+            "available; try again tomorrow."
+        ),
+    },
+    "demo.budget_monthly": {
+        "fr": (
+            "Le budget mensuel de la démonstration est atteint. Les exemples déjà "
+            "générés restent consultables."
+        ),
+        "en": (
+            "The monthly demo budget has been reached. Already generated examples remain available."
+        ),
+    },
     # Email
     "email.no_recipient": {
         "fr": "Aucune adresse email destinataire. Renseignez l'email du client.",
